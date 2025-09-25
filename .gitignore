@@ -1,0 +1,51 @@
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+
+# Temporary files
+*.tmp
+*.temp
+
+# Project specific
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.staging.local
+
+# Alembic
+alembic.ini
+
+# Migration files (keep the structure but ignore specific migrations)
+migrations/versions/*.py
+!migrations/versions/__init__.py
+
+# Ruff
+.ruff_cache/
+
+# Black
+.black/
+
+# Pre-commit
+.pre-commit-config.yaml
