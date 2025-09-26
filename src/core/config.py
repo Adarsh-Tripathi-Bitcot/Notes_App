@@ -5,7 +5,7 @@ This module provides centralized configuration management for the Notes App,
 following the principle of configuration as code and environment-based settings.
 """
 
-from typing import List
+from typing import Dict, List
 
 from pydantic import Field, validator
 from pydantic_settings import BaseSettings
@@ -44,8 +44,13 @@ class Settings(BaseSettings):
     )
 
     # Logging Configuration
-    log_level: str = Field(default="INFO", description="Logging level")
+    log_level: str = Field(
+        default="", description="Logging level (empty for environment-based default)"
+    )
     log_format: str = Field(default="json", description="Log format (json or text)")
+    module_log_levels: Dict[str, str] = Field(
+        default_factory=dict, description="Per-module log level overrides"
+    )
 
     class Config:
         """Pydantic configuration."""
@@ -63,8 +68,20 @@ class Settings(BaseSettings):
         return v
 
     @validator("log_level")
-    def validate_log_level(cls, v: str) -> str:
-        """Validate log level value."""
+    def validate_log_level(cls, v: str, values: dict) -> str:
+        """Validate log level value and set environment-based default."""
+        if not v:
+            # Set default based on environment
+            environment = values.get("environment", "development")
+            if environment == "development":
+                return "DEBUG"
+            elif environment == "testing":
+                return "INFO"
+            elif environment == "staging":
+                return "WARNING"
+            else:  # production
+                return "ERROR"
+
         allowed_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         if v.upper() not in allowed_levels:
             raise ValueError(f"Log level must be one of: {allowed_levels}")
@@ -77,6 +94,17 @@ class Settings(BaseSettings):
         if v not in allowed_formats:
             raise ValueError(f"Log format must be one of: {allowed_formats}")
         return v
+
+    @validator("module_log_levels")
+    def validate_module_log_levels(cls, v: Dict[str, str]) -> Dict[str, str]:
+        """Validate module log levels."""
+        allowed_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        for module, level in v.items():
+            if level.upper() not in allowed_levels:
+                raise ValueError(
+                    f"Module {module} log level must be one of: {allowed_levels}"
+                )
+        return {module: level.upper() for module, level in v.items()}
 
     @validator("jwt_expiry_minutes")
     def validate_jwt_expiry(cls, v: int) -> int:

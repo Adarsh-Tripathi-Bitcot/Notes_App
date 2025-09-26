@@ -13,11 +13,9 @@ from ..core.config import settings
 from ..core.database import create_tables
 from ..core.error_handler import setup_error_handlers
 from ..core.logging import configure_logging, get_logger
-from .routers import notes_router, user_router
+from .routers import logging_router, notes_router, user_router
 
-# Configure logging
-configure_logging()
-logger = get_logger(__name__)
+# Note: Logging will be configured at startup, not at import time
 
 
 def create_app() -> FastAPI:
@@ -58,8 +56,10 @@ def create_app() -> FastAPI:
 
     # Include routers
     app.include_router(user_router.router, prefix="/api/v1/users", tags=["users"])
-
     app.include_router(notes_router.router, prefix="/api/v1/notes", tags=["notes"])
+    app.include_router(
+        logging_router.router, prefix="/api/v1/logging", tags=["logging"]
+    )
 
     # Health check endpoint
     @app.get("/health", tags=["health"])
@@ -95,7 +95,7 @@ def create_app() -> FastAPI:
             "health_check": "/health",
         }
 
-    logger.info("FastAPI application created successfully")
+    # Log application creation (logger will be available after startup)
     return app
 
 
@@ -111,6 +111,10 @@ async def startup_event():
     This function is called when the application starts up.
     It initializes the database and performs other startup tasks.
     """
+    # Configure logging at startup
+    configure_logging()
+    logger = get_logger(__name__)
+
     try:
         # Create database tables
         create_tables()
@@ -137,6 +141,7 @@ async def shutdown_event():
     This function is called when the application shuts down.
     It performs cleanup tasks.
     """
+    logger = get_logger(__name__)
     logger.info("Application shutting down")
 
 

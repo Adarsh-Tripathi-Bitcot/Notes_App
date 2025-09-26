@@ -29,6 +29,9 @@ def configure_logging() -> None:
         level=getattr(logging, settings.log_level),
     )
 
+    # Configure per-module log levels based on environment
+    _configure_module_log_levels()
+
     # Configure structlog processors
     processors: list[Processor] = [
         structlog.stdlib.filter_by_level,
@@ -195,3 +198,90 @@ def log_error(
         error_context.update(context)
 
     logger.error("An error occurred", **error_context)
+
+
+def _configure_module_log_levels() -> None:
+    """Configure per-module log levels based on environment and settings."""
+    # Default module levels based on environment
+    default_module_levels = {
+        "src.api": "DEBUG" if settings.debug else "INFO",
+        "src.core": "INFO",
+        "src.services": "WARNING" if settings.environment == "production" else "INFO",
+        "src.repositories": "WARNING"
+        if settings.environment == "production"
+        else "DEBUG",
+        "src.models": "WARNING" if settings.environment == "production" else "INFO",
+    }
+
+    # Apply default module levels
+    for module, level in default_module_levels.items():
+        logging.getLogger(module).setLevel(getattr(logging, level))
+
+    # Apply custom module levels from settings
+    for module, level in settings.module_log_levels.items():
+        logging.getLogger(module).setLevel(getattr(logging, level))
+
+
+def set_log_level(level: str, module: Optional[str] = None) -> None:
+    """
+    Set log level for a specific module or globally.
+
+    Args:
+        level: Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        module: Optional module name. If None, sets root logger level.
+    """
+    level = level.upper()
+    if level not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
+        raise ValueError(f"Invalid log level: {level}")
+
+    if module:
+        logging.getLogger(module).setLevel(getattr(logging, level))
+    else:
+        # Set root logger level
+        logging.getLogger().setLevel(getattr(logging, level))
+
+
+def get_current_log_level(module: Optional[str] = None) -> str:
+    """
+    Get current log level for a specific module or root logger.
+
+    Args:
+        module: Optional module name. If None, returns root logger level.
+
+    Returns:
+        Current log level as string.
+    """
+    if module:
+        logger = logging.getLogger(module)
+    else:
+        logger = logging.getLogger()
+
+    return logging.getLevelName(logger.level)
+
+
+def list_configured_modules() -> Dict[str, str]:
+    """
+    List all configured modules and their log levels.
+
+    Returns:
+        Dictionary mapping module names to their log levels.
+    """
+    modules = {}
+
+    # Get all loggers
+    for name in logging.Logger.manager.loggerDict:
+        logger = logging.getLogger(name)
+        if logger.level != logging.NOTSET:
+            modules[name] = logging.getLevelName(logger.level)
+
+    # Add root logger
+    root_logger = logging.getLogger()
+    if root_logger.level != logging.NOTSET:
+        modules["root"] = logging.getLevelName(root_logger.level)
+
+    return modules
+
+
+def reset_log_levels() -> None:
+    """Reset all log levels to their default configuration."""
+    configure_logging()
