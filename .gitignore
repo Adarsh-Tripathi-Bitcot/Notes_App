@@ -12,6 +12,10 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
 
 # Environments
 .env
