@@ -13,7 +13,8 @@ from ..core.config import settings
 from ..core.database import create_tables
 from ..core.error_handler import setup_error_handlers
 from ..core.logging import configure_logging, get_logger
-from .routers import logging_router, notes_router, user_router
+from ..core.middleware import CorrelationMiddleware
+from .routers import admin_router, logging_router, notes_router, user_router
 
 # Note: Logging will be configured at startup, not at import time
 
@@ -51,6 +52,9 @@ def create_app() -> FastAPI:
             allowed_hosts=["*"],  # Configure with actual domains in production
         )
 
+    # Add correlation middleware for comprehensive request/response logging
+    app.add_middleware(CorrelationMiddleware)
+
     # Setup error handlers
     setup_error_handlers(app)
 
@@ -60,6 +64,7 @@ def create_app() -> FastAPI:
     app.include_router(
         logging_router.router, prefix="/api/v1/logging", tags=["logging"]
     )
+    app.include_router(admin_router.router, prefix="/api/v1", tags=["admin"])
 
     # Health check endpoint
     @app.get("/health", tags=["health"])

@@ -13,9 +13,11 @@ from sqlalchemy.orm import Session
 
 from ..core.exceptions import DatabaseError
 from ..core.logging import get_logger, log_database_operation
+from ..core.logging_utils import RepositoryLogger
 from ..models.note import Note, NoteStatus
 
 logger = get_logger(__name__)
+repo_logger = RepositoryLogger("note_repository")
 
 
 class NoteRepository:
@@ -48,6 +50,13 @@ class NoteRepository:
         Raises:
             DatabaseError: If database operation fails
         """
+        repo_logger.log_query(
+            "INSERT",
+            "notes",
+            owner_id=note_data.get("owner_id"),
+            title=note_data.get("title"),
+        )
+
         with log_database_operation(
             logger, "INSERT", "notes", owner_id=note_data.get("owner_id")
         ):
@@ -57,6 +66,10 @@ class NoteRepository:
                 self.db.commit()
                 self.db.refresh(note)
 
+                repo_logger.log_success(
+                    "create", note_id=note.id, owner_id=note.owner_id, title=note.title
+                )
+
                 logger.info(
                     "Note created successfully", note_id=note.id, owner_id=note.owner_id
                 )
@@ -64,6 +77,12 @@ class NoteRepository:
 
             except Exception as e:
                 self.db.rollback()
+                repo_logger.log_error(
+                    "create",
+                    e,
+                    owner_id=note_data.get("owner_id"),
+                    title=note_data.get("title"),
+                )
                 logger.error("Failed to create note", error=str(e), note_data=note_data)
                 raise DatabaseError(
                     message="Failed to create note",

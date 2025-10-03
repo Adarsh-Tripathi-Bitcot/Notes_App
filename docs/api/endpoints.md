@@ -417,6 +417,88 @@ Get public notes from all users.
 ]
 ```
 
+## Logging Management Endpoints
+
+### 1. Get Logging Status
+**GET** `/api/v1/logging/status`
+
+Get current logging configuration status.
+
+**Response (200 OK):**
+```json
+{
+  "message": "Logging status retrieved successfully",
+  "level": "DEBUG",
+  "module": "root"
+}
+```
+
+### 2. Set Log Level
+**POST** `/api/v1/logging/set-level`
+
+Set log level for a specific module or globally.
+
+**Request Body:**
+```json
+{
+  "level": "DEBUG",
+  "module": "src.api"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "message": "Log level set to DEBUG for src.api",
+  "level": "DEBUG",
+  "module": "src.api"
+}
+```
+
+### 3. Get Module Log Level
+**GET** `/api/v1/logging/level/{module_name}`
+
+Get current log level for a specific module.
+
+**Path Parameters:**
+- `module_name` (string): Module name (e.g., "src.api", "src.core")
+
+**Response (200 OK):**
+```json
+{
+  "message": "Log level for src.api is DEBUG",
+  "level": "DEBUG",
+  "module": "src.api"
+}
+```
+
+### 4. List Configured Modules
+**GET** `/api/v1/logging/modules`
+
+List all configured modules and their log levels.
+
+**Response (200 OK):**
+```json
+{
+  "src.api": "DEBUG",
+  "src.core": "INFO",
+  "src.services": "WARNING",
+  "root": "DEBUG"
+}
+```
+
+### 5. Reset Log Levels
+**POST** `/api/v1/logging/reset`
+
+Reset all log levels to their default configuration.
+
+**Response (200 OK):**
+```json
+{
+  "message": "All log levels reset to default configuration"
+}
+```
+
 ## Error Responses
 
 ### 400 Bad Request

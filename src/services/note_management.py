@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from ..core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from ..core.logging import get_logger, log_function_call
+from ..core.logging_utils import ServiceLogger
 from ..models.note import Note, NoteStatus
 from ..repositories.note_repository import NoteRepository
 from ..schemas.note import (
@@ -26,6 +27,7 @@ from ..schemas.note import (
 )
 
 logger = get_logger(__name__)
+service_logger = ServiceLogger("note_management")
 
 
 class NoteManagementService:
@@ -60,6 +62,14 @@ class NoteManagementService:
         Raises:
             ValidationError: If validation fails
         """
+        service_logger.log_operation(
+            "create_note",
+            owner_id=owner_id,
+            title=note_data.title,
+            is_public=note_data.is_public,
+            is_pinned=note_data.is_pinned,
+        )
+
         with log_function_call(
             logger, "create_note", owner_id=owner_id, title=note_data.title
         ):
@@ -83,12 +93,19 @@ class NoteManagementService:
                 # Create note
                 note = self.note_repository.create(note_dict)
 
+                service_logger.log_success(
+                    "create_note", note_id=note.id, owner_id=owner_id, title=note.title
+                )
+
                 logger.info(
                     "Note created successfully", note_id=note.id, owner_id=owner_id
                 )
                 return note
 
             except Exception as e:
+                service_logger.log_error(
+                    "create_note", e, owner_id=owner_id, title=note_data.title
+                )
                 logger.error("Failed to create note", error=str(e), owner_id=owner_id)
                 raise ValidationError(
                     message="Failed to create note", details={"error": str(e)}

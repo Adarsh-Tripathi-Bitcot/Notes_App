@@ -7,7 +7,7 @@ following the principle of configuration as code and environment-based settings.
 
 from typing import Dict, List
 
-from pydantic import Field, validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -43,23 +43,69 @@ class Settings(BaseSettings):
         description="Allowed CORS origins",
     )
 
-    # Logging Configuration
+    # Enhanced Logging Configuration
     log_level: str = Field(
         default="", description="Logging level (empty for environment-based default)"
     )
-    log_format: str = Field(default="json", description="Log format (json or text)")
+    log_format: str = Field(default="text", description="Log format (json or text)")
     module_log_levels: Dict[str, str] = Field(
         default_factory=dict, description="Per-module log level overrides"
     )
+    enable_colored_logs: bool = Field(
+        default=True, description="Enable colored logs in development"
+    )
+    enable_file_line_info: bool = Field(
+        default=True, description="Enable file and line number in logs"
+    )
+    enable_user_context: bool = Field(
+        default=True, description="Enable user context in logs"
+    )
+    enable_request_context: bool = Field(
+        default=True, description="Enable request context in logs"
+    )
+    show_user_email: bool = Field(default=True, description="Show user email in logs")
+    show_user_username: bool = Field(
+        default=True, description="Show user username in logs"
+    )
+    show_user_full_name: bool = Field(
+        default=True, description="Show user full name in logs"
+    )
+    show_user_display_name: bool = Field(
+        default=True, description="Show user display name in logs"
+    )
+    enable_xray_tracing: bool = Field(
+        default=False, description="Enable AWS X-Ray tracing"
+    )
 
-    class Config:
-        """Pydantic configuration."""
+    # Testing Configuration
+    auth_bypass: bool = Field(
+        default=False, description="Enable authentication bypass for testing"
+    )
+    test_user_id: str = Field(
+        default="test-user-123", description="Test user ID for bypass"
+    )
+    test_user_email: str = Field(
+        default="test@example.com", description="Test user email for bypass"
+    )
+    test_user_username: str = Field(
+        default="testuser", description="Test user username for bypass"
+    )
+    test_user_full_name: str = Field(
+        default="Test User", description="Test user full name for bypass"
+    )
+    test_user_display_name: str = Field(
+        default="Test", description="Test user display name for bypass"
+    )
+    secret_key: str = Field(default="", description="Secret key for application")
 
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = False
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": False,
+    }
 
-    @validator("environment")
+    @field_validator("environment")
+    @classmethod
     def validate_environment(cls, v: str) -> str:
         """Validate environment value."""
         allowed_environments = ["development", "testing", "staging", "production"]
@@ -67,12 +113,13 @@ class Settings(BaseSettings):
             raise ValueError(f"Environment must be one of: {allowed_environments}")
         return v
 
-    @validator("log_level")
-    def validate_log_level(cls, v: str, values: dict) -> str:
+    @field_validator("log_level")
+    @classmethod
+    def validate_log_level(cls, v: str, info) -> str:
         """Validate log level value and set environment-based default."""
         if not v:
             # Set default based on environment
-            environment = values.get("environment", "development")
+            environment = info.data.get("environment", "development")
             if environment == "development":
                 return "DEBUG"
             elif environment == "testing":
@@ -87,7 +134,8 @@ class Settings(BaseSettings):
             raise ValueError(f"Log level must be one of: {allowed_levels}")
         return v.upper()
 
-    @validator("log_format")
+    @field_validator("log_format")
+    @classmethod
     def validate_log_format(cls, v: str) -> str:
         """Validate log format value."""
         allowed_formats = ["json", "text"]
@@ -95,7 +143,8 @@ class Settings(BaseSettings):
             raise ValueError(f"Log format must be one of: {allowed_formats}")
         return v
 
-    @validator("module_log_levels")
+    @field_validator("module_log_levels")
+    @classmethod
     def validate_module_log_levels(cls, v: Dict[str, str]) -> Dict[str, str]:
         """Validate module log levels."""
         allowed_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -106,7 +155,8 @@ class Settings(BaseSettings):
                 )
         return {module: level.upper() for module, level in v.items()}
 
-    @validator("jwt_expiry_minutes")
+    @field_validator("jwt_expiry_minutes")
+    @classmethod
     def validate_jwt_expiry(cls, v: int) -> int:
         """Validate JWT expiry minutes."""
         if v <= 0:
@@ -115,11 +165,23 @@ class Settings(BaseSettings):
             raise ValueError("JWT expiry minutes cannot exceed 7 days")
         return v
 
-    @validator("bcrypt_rounds")
+    @field_validator("bcrypt_rounds")
+    @classmethod
     def validate_bcrypt_rounds(cls, v: int) -> int:
         """Validate BCrypt rounds."""
         if v < 4 or v > 31:
             raise ValueError("BCrypt rounds must be between 4 and 31")
+        return v
+
+    @field_validator("auth_bypass")
+    @classmethod
+    def validate_auth_bypass(cls, v: bool, info) -> bool:
+        """Validate authentication bypass setting."""
+        environment = info.data.get("environment", "development")
+        if v and environment not in ["testing", "development"]:
+            raise ValueError(
+                "Authentication bypass only allowed in testing/development"
+            )
         return v
 
 

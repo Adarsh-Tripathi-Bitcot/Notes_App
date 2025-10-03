@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
 from .exceptions import NotesAppException
-from .logging import get_logger, log_error
+from .logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -66,7 +66,14 @@ async def notes_app_exception_handler(
         JSON error response
     """
     # Log the error
-    log_error(logger, exc, {"path": request.url.path, "method": request.method})
+    logger.error(
+        "NotesApp exception occurred",
+        error=exc.message,
+        error_code=exc.error_code,
+        error_details=exc.details,
+        path=request.url.path,
+        method=request.method,
+    )
 
     # Determine status code based on error type
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -183,14 +190,13 @@ async def sqlalchemy_exception_handler(
         JSON error response
     """
     # Log the database error
-    log_error(
-        logger,
-        exc,
-        {
-            "path": request.url.path,
-            "method": request.method,
-            "error_type": "database_error",
-        },
+    logger.error(
+        "Database error occurred",
+        error=str(exc),
+        error_type=type(exc).__name__,
+        path=request.url.path,
+        method=request.method,
+        exc_info=True,
     )
 
     return JSONResponse(
@@ -216,14 +222,13 @@ async def general_exception_handler(request: Request, exc: Exception) -> JSONRes
         JSON error response
     """
     # Log the error
-    log_error(
-        logger,
-        exc,
-        {
-            "path": request.url.path,
-            "method": request.method,
-            "error_type": "unhandled_exception",
-        },
+    logger.error(
+        "Unhandled exception occurred",
+        error=str(exc),
+        error_type=type(exc).__name__,
+        path=request.url.path,
+        method=request.method,
+        exc_info=True,
     )
 
     return JSONResponse(

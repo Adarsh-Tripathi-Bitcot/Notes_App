@@ -525,7 +525,7 @@ class TestCoreFunctionality:
         # Test exception messages
         assert validation_error.message == "Validation failed"
         assert database_error.message == "Database failed"
-        assert not_found_error.message == "Resource not found not found"
+        assert not_found_error.message == "Resource not found"
 
         # Test exception inheritance
         assert isinstance(validation_error, NotesAppException)

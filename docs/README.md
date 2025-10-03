@@ -30,6 +30,23 @@ This documentation is organized into several sections to help you understand, de
 - [Step 3: Implementation](step3/) - API implementation and features
 - [Step 4: Finalization](step4/) - Testing, documentation, and deployment
 
+### 🔧 Features & Functionality
+- [User Authentication](features/user-authentication.md) - JWT-based authentication and user management
+- [Note Management](features/note-management.md) - Comprehensive note CRUD operations and search
+- [API Endpoints](features/api-endpoints.md) - RESTful API design and endpoint documentation
+- [Database Features](features/database-features.md) - PostgreSQL integration and data persistence
+- [Error Handling](features/error-handling.md) - Comprehensive error management and validation
+- [Enhanced Logging](features/enhanced-logging.md) - Advanced structured logging with metadata and context management
+- [Dynamic Log Level Configuration](features/dynamic-logging.md) - Runtime log level management and environment-based defaults
+
+### 📚 Developer Guidelines
+- [Structured Logging Implementation](developer_guidelines/structured-logging-implementation.md) - Production-ready structured logging implementation guide
+- [Code Standards](developer_guidelines/code_standards.md) - Coding standards and best practices
+- [Database Setup](developer_guidelines/database_setup.md) - Database configuration and setup
+- [Getting Started](developer_guidelines/getting_started.md) - Development environment setup
+- [Quick Reference](developer_guidelines/quick_reference.md) - Quick reference for developers
+- [Virtual Environment Setup](developer_guidelines/virtual_environment_setup.md) - Python virtual environment setup
+
 ### 🔗 Related Documentation
 - [Product Requirements](prd.md) - Detailed product requirements document
 - [API Documentation](step4/04_api_documentation.md) - Complete API reference
@@ -96,6 +113,14 @@ The Notes App follows Clean Architecture principles with clear separation of con
 - **User Management**: Registration, authentication, profile management
 - **Note Operations**: Create, read, update, delete notes
 - **Advanced Features**: Search, filtering, pagination, bulk operations
+- **Production-Ready Structured Logging**:
+  - Environment-aware formatting (colored console for dev, JSON for production)
+  - Correlation tracking with unique request IDs
+  - Automatic context injection (user, request, system info)
+  - File/line caller information for debugging
+  - Performance monitoring with built-in timing
+  - Cross-platform color support
+- **Dynamic Configuration**: Runtime log level management and environment-based defaults
 - **Security**: JWT authentication, password hashing, input validation
 - **Quality**: Comprehensive testing, code quality tools, documentation
 

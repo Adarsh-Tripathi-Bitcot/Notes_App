@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from ...core.database import get_db
 from ...core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from ...core.logging import get_logger, log_api_request
+from ...core.logging_utils import APILogger
 from ...models.note import NoteStatus
 from ...schemas.note import (
     NoteBulkAction,
@@ -29,6 +30,7 @@ from ...services.authentication import AuthenticationService
 from ...services.note_management import NoteManagementService
 
 logger = get_logger(__name__)
+api_logger = APILogger("notes")
 
 # Create router
 router = APIRouter()
@@ -123,14 +125,30 @@ async def create_note(
     Raises:
         HTTPException: If note creation fails
     """
+    api_logger.log_request(
+        "POST",
+        "/",
+        user_id=current_user.id,
+        title=note_data.title,
+        is_public=note_data.is_public,
+    )
+
     with log_api_request(logger, "POST", "/", user_id=current_user.id):
         try:
             note = note_service.create_note(note_data, current_user.id)
+
+            api_logger.log_response(
+                "POST", "/", 201, note_id=note.id, user_id=current_user.id
+            )
+
             logger.info(
                 "Note created successfully", note_id=note.id, user_id=current_user.id
             )
             return note
         except ValidationError as e:
+            api_logger.log_error(
+                "POST", "/", e, user_id=current_user.id, title=note_data.title
+            )
             logger.warning(
                 "Note creation failed: validation error",
                 error=e.message,
@@ -140,6 +158,9 @@ async def create_note(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.message
             )
         except Exception as e:
+            api_logger.log_error(
+                "POST", "/", e, user_id=current_user.id, title=note_data.title
+            )
             logger.error("Note creation failed", error=str(e), user_id=current_user.id)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

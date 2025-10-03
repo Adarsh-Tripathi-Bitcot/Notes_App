@@ -64,35 +64,49 @@ class ValidationError(NotesAppException):
         super().__init__(
             message=message, error_code="VALIDATION_ERROR", details=details
         )
+        self.field = field
 
 
 class AuthenticationError(NotesAppException):
     """Raised when authentication fails."""
 
-    def __init__(self, message: str = "Authentication failed", **kwargs) -> None:
+    def __init__(
+        self,
+        message: str = "Authentication failed",
+        error_code: str = "AUTH_001",
+        **kwargs,
+    ) -> None:
         """
         Initialize authentication error.
 
         Args:
             message: Error message
+            error_code: Error code for the authentication error
             **kwargs: Additional error details
         """
         super().__init__(
             message=message,
-            error_code="AUTHENTICATION_ERROR",
+            error_code=error_code,
             details=kwargs.get("details", {}),
         )
+        self.error_code = error_code
 
 
 class AuthorizationError(NotesAppException):
     """Raised when authorization fails."""
 
-    def __init__(self, message: str = "Authorization failed", **kwargs) -> None:
+    def __init__(
+        self,
+        message: str = "Authorization failed",
+        resource: Optional[str] = None,
+        **kwargs,
+    ) -> None:
         """
         Initialize authorization error.
 
         Args:
             message: Error message
+            resource: Resource that failed authorization
             **kwargs: Additional error details
         """
         super().__init__(
@@ -100,48 +114,64 @@ class AuthorizationError(NotesAppException):
             error_code="AUTHORIZATION_ERROR",
             details=kwargs.get("details", {}),
         )
+        self.resource = resource
 
 
 class NotFoundError(NotesAppException):
     """Raised when a requested resource is not found."""
 
     def __init__(
-        self, resource: str, identifier: Optional[str] = None, **kwargs
+        self,
+        message: str = "Resource not found",
+        resource: Optional[str] = None,
+        identifier: Optional[str] = None,
+        **kwargs,
     ) -> None:
         """
         Initialize not found error.
 
         Args:
+            message: Error message
             resource: Type of resource not found
             identifier: Identifier of the resource
             **kwargs: Additional error details
         """
-        message = f"{resource} not found"
-        if identifier:
-            message += f" with identifier: {identifier}"
+        if resource and identifier:
+            message = f"{resource} not found with identifier: {identifier}"
+        elif resource:
+            message = f"{resource} not found"
 
         details = kwargs.get("details", {})
-        details["resource"] = resource
+        if resource:
+            details["resource"] = resource
         if identifier:
             details["identifier"] = identifier
 
         super().__init__(message=message, error_code="NOT_FOUND", details=details)
+        self.resource = resource
 
 
 class ConflictError(NotesAppException):
     """Raised when a resource conflict occurs."""
 
-    def __init__(self, message: str = "Resource conflict", **kwargs) -> None:
+    def __init__(
+        self,
+        message: str = "Resource conflict",
+        resource: Optional[str] = None,
+        **kwargs,
+    ) -> None:
         """
         Initialize conflict error.
 
         Args:
             message: Error message
+            resource: Resource that caused the conflict
             **kwargs: Additional error details
         """
         super().__init__(
             message=message, error_code="CONFLICT", details=kwargs.get("details", {})
         )
+        self.resource = resource
 
 
 class DatabaseError(NotesAppException):
@@ -166,27 +196,34 @@ class DatabaseError(NotesAppException):
             details["operation"] = operation
 
         super().__init__(message=message, error_code="DATABASE_ERROR", details=details)
+        self.operation = operation
 
 
 class ExternalServiceError(NotesAppException):
     """Raised when an external service call fails."""
 
     def __init__(
-        self, service: str, message: str = "External service error", **kwargs
+        self,
+        message: str = "Service unavailable",
+        service: Optional[str] = None,
+        **kwargs,
     ) -> None:
         """
         Initialize external service error.
 
         Args:
-            service: Name of the external service
             message: Error message
+            service: Name of the external service
             **kwargs: Additional error details
         """
         details = kwargs.get("details", {})
-        details["service"] = service
+        if service:
+            details["service"] = service
+            message = f"{service}: {message}"
 
         super().__init__(
-            message=f"{service}: {message}",
+            message=message,
             error_code="EXTERNAL_SERVICE_ERROR",
             details=details,
         )
+        self.service = service

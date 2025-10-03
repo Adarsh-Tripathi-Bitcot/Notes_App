@@ -171,6 +171,7 @@ class AuthenticationService:
                 logger.info(
                     "User registered successfully", user_id=user.id, email=user.email
                 )
+
                 return user
 
             except ValidationError:
@@ -394,7 +395,7 @@ class AuthenticationService:
                 # Get user
                 user = self.user_repository.get_by_id(user_id)
                 if not user:
-                    raise NotFoundError("User", str(user_id))
+                    raise NotFoundError(resource="User", identifier=str(user_id))
 
                 # Verify current password
                 if not self.verify_password(current_password, user.hashed_password):
@@ -411,7 +412,7 @@ class AuthenticationService:
                 updated_user = self.user_repository.update(user_id, update_data)
 
                 if not updated_user:
-                    raise NotFoundError("User", str(user_id))
+                    raise NotFoundError(resource="User", identifier=str(user_id))
 
                 logger.info("Password changed successfully", user_id=user_id)
                 return True
@@ -443,7 +444,7 @@ class AuthenticationService:
                 # Get user
                 user = self.user_repository.get_by_id(user_id)
                 if not user:
-                    raise NotFoundError("User", str(user_id))
+                    raise NotFoundError(resource="User", identifier=str(user_id))
 
                 # Deactivate user
                 user.deactivate()
@@ -479,7 +480,7 @@ class AuthenticationService:
                 # Get user
                 user = self.user_repository.get_by_id(user_id)
                 if not user:
-                    raise NotFoundError("User", str(user_id))
+                    raise NotFoundError(resource="User", identifier=str(user_id))
 
                 # Verify user
                 user.verify()

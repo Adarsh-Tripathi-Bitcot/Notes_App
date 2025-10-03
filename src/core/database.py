@@ -7,7 +7,7 @@ and database utilities for the Notes App using SQLAlchemy.
 
 from typing import AsyncGenerator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
@@ -48,7 +48,7 @@ def create_database_engines() -> None:
         settings.database_url,
         pool_pre_ping=True,
         pool_recycle=300,
-        echo=settings.debug,
+        echo=False,  # Disable SQL query logging
     )
 
     # Create asynchronous engine
@@ -56,7 +56,7 @@ def create_database_engines() -> None:
         async_database_url,
         pool_pre_ping=True,
         pool_recycle=300,
-        echo=settings.debug,
+        echo=False,  # Disable SQL query logging
     )
 
     # Create session makers
@@ -181,7 +181,7 @@ def check_database_connection() -> bool:
             create_database_engines()
 
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
+            conn.execute(text("SELECT 1"))
         return True
     except Exception as e:
         logger.error("Database connection failed", error=str(e))
@@ -200,7 +200,7 @@ async def check_database_connection_async() -> bool:
             create_database_engines()
 
         async with async_engine.begin() as conn:
-            await conn.execute("SELECT 1")
+            await conn.execute(text("SELECT 1"))
         return True
     except Exception as e:
         logger.error("Async database connection failed", error=str(e))
