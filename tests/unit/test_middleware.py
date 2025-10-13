@@ -9,9 +9,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from src.core.logging import add_correlation_context
 from src.core.middleware import (
     CorrelationMiddleware,
-    add_correlation_context,
     generate_correlation_id,
     get_logger,
     setup_logging_middleware,
