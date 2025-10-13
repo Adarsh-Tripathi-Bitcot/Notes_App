@@ -57,16 +57,13 @@ class TestServiceLogger:
 
     def test_log_error(self):
         """Test logging error."""
-        with patch("src.core.logging_utils.get_logger") as mock_get_logger:
-            mock_logger = Mock()
-            mock_get_logger.return_value = mock_logger
-
-            service_logger = ServiceLogger("test_service")
+        service_logger = ServiceLogger("test_service")
+        with patch.object(service_logger.logger, "error") as mock_error:
             error = ValueError("Test error")
             service_logger.log_error("create_user", error, user_id="123")
 
-            mock_logger.error.assert_called_once()
-            call_args = mock_logger.error.call_args
+            mock_error.assert_called_once()
+            call_args = mock_error.call_args
             assert "Service operation failed: create_user" in call_args[0][0]
             assert call_args[1]["status"] == "error"
             assert call_args[1]["error"] == "Test error"
@@ -99,30 +96,24 @@ class TestRepositoryLogger:
 
     def test_log_success(self):
         """Test logging successful repository operation."""
-        with patch("src.core.logging_utils.get_logger") as mock_get_logger:
-            mock_logger = Mock()
-            mock_get_logger.return_value = mock_logger
-
-            repo_logger = RepositoryLogger("test_repository")
+        repo_logger = RepositoryLogger("test_repository")
+        with patch.object(repo_logger.logger, "debug") as mock_debug:
             repo_logger.log_success("create_user", user_id="123")
 
-            mock_logger.debug.assert_called_once()
-            call_args = mock_logger.debug.call_args
+            mock_debug.assert_called_once()
+            call_args = mock_debug.call_args
             assert "Repository operation completed: create_user" in call_args[0][0]
             assert call_args[1]["status"] == "success"
 
     def test_log_error(self):
         """Test logging repository error."""
-        with patch("src.core.logging_utils.get_logger") as mock_get_logger:
-            mock_logger = Mock()
-            mock_get_logger.return_value = mock_logger
-
-            repo_logger = RepositoryLogger("test_repository")
+        repo_logger = RepositoryLogger("test_repository")
+        with patch.object(repo_logger.logger, "error") as mock_error:
             error = ValueError("Test error")
             repo_logger.log_error("create_user", error, user_id="123")
 
-            mock_logger.error.assert_called_once()
-            call_args = mock_logger.error.call_args
+            mock_error.assert_called_once()
+            call_args = mock_error.call_args
             assert "Repository operation failed: create_user" in call_args[0][0]
             assert call_args[1]["status"] == "error"
             assert call_args[1]["error"] == "Test error"
@@ -140,15 +131,12 @@ class TestAPILogger:
 
     def test_log_request(self):
         """Test logging API request."""
-        with patch("src.core.logging_utils.get_logger") as mock_get_logger:
-            mock_logger = Mock()
-            mock_get_logger.return_value = mock_logger
-
-            api_logger = APILogger("test_router")
+        api_logger = APILogger("test_router")
+        with patch.object(api_logger.logger, "info") as mock_info:
             api_logger.log_request("GET", "/users", user_id="123")
 
-            mock_logger.info.assert_called_once()
-            call_args = mock_logger.info.call_args
+            mock_info.assert_called_once()
+            call_args = mock_info.call_args
             assert "API request: GET /users" in call_args[0][0]
             assert call_args[1]["router"] == "test_router"
             assert call_args[1]["method"] == "GET"

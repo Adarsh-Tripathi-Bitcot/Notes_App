@@ -171,7 +171,7 @@ class TestUserProfile:
         """Test getting profile without authentication."""
         response = client.get("/api/v1/users/me")
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         data = response.json()
         assert "error" in data
 
@@ -208,7 +208,7 @@ class TestUserProfile:
 
         response = client.put("/api/v1/users/me", json=update_data)
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         data = response.json()
         assert "error" in data
 
@@ -300,7 +300,7 @@ class TestUserStats:
         """Test getting stats without authentication."""
         response = client.get("/api/v1/users/me/stats")
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         data = response.json()
         assert "error" in data
 
@@ -320,6 +320,6 @@ class TestLogout:
         """Test logout without authentication."""
         response = client.post("/api/v1/users/logout")
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         data = response.json()
         assert "error" in data

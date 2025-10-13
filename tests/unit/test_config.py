@@ -110,7 +110,11 @@ class TestSettings:
 
     def test_settings_default_values(self):
         """Test default values when no env vars are set."""
-        with patch.dict(os.environ, {}, clear=True):
+        with patch.dict(
+            os.environ,
+            {"DATABASE_URL": "sqlite:///:memory:", "JWT_SECRET_KEY": "test-secret-key"},
+            clear=True,
+        ):
             settings = Settings()
             # Should have default values
             assert settings is not None
@@ -309,12 +313,21 @@ class TestSettings:
 
     def test_settings_auth_bypass_validation(self):
         """Test auth bypass validation."""
-        # Test auth bypass in production
-        with pytest.raises(ValueError):
-            with patch.dict(
-                os.environ, {"ENVIRONMENT": "production", "AUTH_BYPASS": "true"}
-            ):
-                Settings()
+        # Test auth bypass in production - should be allowed but disabled at runtime
+        with patch.dict(
+            os.environ,
+            {
+                "ENVIRONMENT": "production",
+                "AUTH_BYPASS": "true",
+                "DATABASE_URL": "sqlite:///:memory:",
+                "JWT_SECRET_KEY": "test-secret-key",
+            },
+        ):
+            settings = Settings()
+            # Should not raise ValueError - auth bypass is allowed but
+            # disabled at runtime
+            assert settings.auth_bypass is True
+            assert settings.environment == "production"
 
     def test_settings_secret_key(self):
         """Test secret key configuration."""

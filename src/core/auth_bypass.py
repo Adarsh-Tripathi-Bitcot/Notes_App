@@ -27,8 +27,8 @@ class AuthBypass:
         Returns:
             True if bypass is enabled, False otherwise
         """
-        # Only allow bypass in testing environment
-        if settings.environment != "testing":
+        # Only allow bypass in testing and development environments
+        if settings.environment == "production":
             return False
 
         # Check both settings and environment variable

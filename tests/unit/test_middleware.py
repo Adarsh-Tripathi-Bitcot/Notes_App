@@ -71,8 +71,8 @@ class TestMiddlewareFunctions:
 
         with patch("src.core.middleware.CorrelationMiddleware"):
             setup_logging_middleware(mock_app)
-            # Should create and add middleware
-            mock_app.add_middleware.assert_called_once()
+            # Should create and add 2 middleware components
+            assert mock_app.add_middleware.call_count == 2
 
     def test_setup_logging_middleware_with_existing_app(self):
         """Test setting up logging middleware with existing app."""
@@ -81,8 +81,8 @@ class TestMiddlewareFunctions:
 
         with patch("src.core.middleware.CorrelationMiddleware"):
             setup_logging_middleware(mock_app)
-            # Should add middleware to app
-            mock_app.add_middleware.assert_called_once()
+            # Should add 2 middleware components to app
+            assert mock_app.add_middleware.call_count == 2
 
     def test_correlation_id_format(self):
         """Test correlation ID format."""
@@ -175,7 +175,7 @@ class TestCorrelationMiddleware:
     def test_middleware_initialization(self):
         """Test middleware initialization."""
         mock_app = Mock()
-        middleware = CorrelationMiddleware(mock_app)
+        middleware = CorrelationMiddleware(mock_app, exclude_paths=[])
 
         assert middleware.app == mock_app
         assert middleware.exclude_paths == []
@@ -230,16 +230,20 @@ class TestCorrelationMiddleware:
         mock_app = Mock()
         middleware = CorrelationMiddleware(mock_app)
 
-        # Test with Bearer token
-        mock_request = Mock()
-        mock_request.headers = {"Authorization": "Bearer test-token"}
-        user_id = middleware._extract_user_id(mock_request)
-        assert user_id == "extracted_user_id"
+        # Mock the _extract_user_context method
+        with patch.object(middleware, "_extract_user_context") as mock_extract:
+            # Test with Bearer token
+            mock_request = Mock()
+            mock_request.headers = {"Authorization": "Bearer test-token"}
+            mock_extract.return_value = {"user_id": "extracted_user_id"}
+            user_id = middleware._extract_user_id(mock_request)
+            assert user_id == "extracted_user_id"
 
-        # Test without token
-        mock_request.headers = {}
-        user_id = middleware._extract_user_id(mock_request)
-        assert user_id == "anonymous"
+            # Test without token
+            mock_request.headers = {}
+            mock_extract.return_value = {}
+            user_id = middleware._extract_user_id(mock_request)
+            assert user_id == "anonymous"
 
     def test_middleware_extract_user_context(self):
         """Test user context extraction."""
@@ -247,11 +251,16 @@ class TestCorrelationMiddleware:
         middleware = CorrelationMiddleware(mock_app)
 
         # Test with auth bypass enabled
-        with patch("src.core.middleware.settings") as mock_settings:
+        with patch("src.core.middleware.settings") as mock_settings, patch(
+            "src.core.middleware.AuthBypass.is_bypass_enabled"
+        ) as mock_bypass:
             mock_settings.auth_bypass = True
             mock_settings.test_user_id = "test-123"
             mock_settings.test_user_email = "test@example.com"
             mock_settings.test_user_username = "testuser"
+            mock_settings.test_user_full_name = "Test User"
+            mock_settings.test_user_display_name = "Test"
+            mock_bypass.return_value = True
 
             mock_request = Mock()
             mock_request.headers = {"Authorization": "Bearer test-token"}

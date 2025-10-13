@@ -1,21 +1,158 @@
-# Enhanced Structured Logging
+# Professional Structured Logging System
 
-This document describes the enhanced structured logging system implemented in the Notes App, which provides comprehensive logging capabilities with metadata, context management, and environment-based configuration.
+This document describes the comprehensive, production-ready structured logging system implemented in the Notes App, which provides professional logging capabilities with advanced correlation tracking, performance monitoring, security event logging, and environment-dependent configuration.
 
 ## Overview
 
-The enhanced logging system builds upon the existing structured logging implementation to provide:
+The professional logging system provides:
 
-- **Enhanced Metadata**: File names, line numbers, function names, and optional tracing IDs
-- **Colored Logs**: Development-friendly colored console output
+- **Environment-Dependent Configuration**: Properly respects .env settings
+- **Advanced Correlation Tracking**: Full request lifecycle monitoring
+- **Performance Monitoring**: Operation timing and metrics
+- **Security Event Logging**: Authentication, authorization, and suspicious activity
+- **Database Operation Tracking**: Query performance and slow query detection
+- **Professional Error Handling**: Structured error reporting
+- **Log Sampling and Filtering**: High-volume operation management
+- **Enhanced Metadata**: File names, line numbers, function names, and tracing IDs
 - **Context Management**: Global and request-level context for tracing
-- **Environment-based Configuration**: Smart defaults based on environment
 - **Per-module Log Levels**: Fine-grained control over logging per module
 - **JSON and Text Formats**: Flexible output formats for different environments
 
+## Key Features
+
+### 1. Fixed Log Level Configuration Issue
+
+**Problem**: Despite setting `LOG_LEVEL=WARNING` in `.env`, you were still seeing `DEBUG` and `INFO` logs.
+
+**Solution**:
+- Modified the validator to **respect explicit `.env` settings first**
+- Only applies environment-based defaults when no explicit log level is set
+- Now `LOG_LEVEL=WARNING` in `.env` will be respected regardless of environment
+
+### 2. Professional Logging Processors Pipeline
+
+Your logging now follows this exact pipeline:
+
+1. **Context Variables**: `structlog.contextvars.merge_contextvars`
+2. **Custom Context**: `add_context_processor` - Adds correlation ID, user info
+3. **Caller Info**: `add_caller_info_processor` - Adds file/line numbers
+4. **Security Context**: `add_security_processor` - Adds security metadata
+5. **Performance Context**: `add_performance_processor` - Adds performance metrics
+6. **Log Sampling**: `log_sampling_processor` - Applies sampling for high-volume operations
+7. **Log Level**: `structlog.processors.add_log_level`
+8. **Timestamp**: `structlog.processors.TimeStamper`
+9. **Stack Info**: `structlog.processors.StackInfoRenderer()`
+10. **Exception Info**: `structlog.dev.set_exc_info`
+11. **Renderer**: JSON for production, colored console for development
+
+### 3. Enhanced Context Variables
+
+The system now tracks comprehensive context:
+
+```python
+# Request tracking
+correlation_id: str
+request_id: str
+session_id: str
+request_path: str
+request_method: str
+
+# User context
+user_id: str
+user_email: str
+user_username: str
+user_full_name: str
+user_display_name: str
+
+# Performance tracking
+operation_start_time: float
+operation_name: str
+```
+
+### 4. Specialized Loggers
+
+#### ServiceLogger
+```python
+from src.core.logging_utils import get_service_logger
+
+logger = get_service_logger("authentication")
+logger.log_operation("user_login", user_id="123")
+logger.log_success("user_login", user_id="123")
+logger.log_error("user_login", error=Exception("Invalid credentials"))
+```
+
+#### RepositoryLogger
+```python
+from src.core.logging_utils import get_repository_logger
+
+logger = get_repository_logger("user_repository")
+logger.log_query("SELECT", "users", user_id="123")
+logger.log_slow_query("SELECT", duration_ms=1500)
+```
+
+#### APILogger
+```python
+from src.core.logging_utils import get_api_logger
+
+logger = get_api_logger("user_router")
+logger.log_request("POST", "/api/users/login")
+logger.log_response("POST", "/api/users/login", 200)
+```
+
+#### PerformanceLogger
+```python
+from src.core.logging_utils import get_performance_logger
+
+logger = get_performance_logger("database")
+logger.log_operation_time("user_query", duration_ms=250)
+logger.log_slow_operation("user_query", duration_ms=1500, threshold_ms=1000)
+```
+
+#### SecurityLogger
+```python
+from src.core.logging_utils import get_security_logger
+
+logger = get_security_logger("authentication")
+logger.log_authentication_attempt("user123", success=True)
+logger.log_authorization_failure("user123", "/admin/users")
+logger.log_suspicious_activity("sql_injection_attempt")
+```
+
+### 5. Professional Context Managers
+
+#### RequestLoggingContext
+```python
+from src.core.logging import RequestLoggingContext
+
+with RequestLoggingContext(
+    correlation_id="abc-123",
+    user_id="user123",
+    request_path="/api/notes"
+):
+    logger.info("Processing request")
+```
+
+#### PerformanceLoggingContext
+```python
+from src.core.logging import log_performance
+
+with log_performance("database_query", logger):
+    # Database operation
+    result = db.query(User).all()
+```
+
+#### SecurityLoggingContext
+```python
+from src.core.logging import log_security_event
+
+with log_security_event("authentication_failure", "HIGH", logger):
+    # Authentication logic
+    raise AuthenticationError("Invalid credentials")
+```
+
 ## Features
 
-### 1. Enhanced Metadata
+### 6. Enhanced Metadata
 
 The logging system automatically includes:
 
@@ -118,15 +255,39 @@ class UserService:
 ### Environment Variables
 
 ```bash
-# Logging Configuration
-LOG_LEVEL=DEBUG                    # Override environment-based default
-LOG_FORMAT=json                    # json or text
+# Basic Logging Configuration
+LOG_LEVEL=INFO                    # DEBUG, INFO, WARNING, ERROR, CRITICAL (now properly respected!)
+LOG_FORMAT=text                   # text or json
 ENABLE_COLORED_LOGS=true          # Enable colored logs in development
 ENABLE_FILE_LINE_INFO=true        # Enable file and line number info
-ENABLE_XRAY_TRACING=false         # Enable AWS X-Ray tracing
+
+# User Context
+ENABLE_USER_CONTEXT=true          # Enable user information in logs
+SHOW_USER_EMAIL=true              # Show user email
+SHOW_USER_USERNAME=true           # Show username
+SHOW_USER_FULL_NAME=true          # Show full name
+SHOW_USER_DISPLAY_NAME=true       # Show display name
+
+# Request Context
+ENABLE_REQUEST_CONTEXT=true       # Enable request information in logs
+
+# Performance Logging
+ENABLE_PERFORMANCE_LOGGING=true   # Enable performance metrics
+ENABLE_DATABASE_LOGGING=true      # Enable database operation logging
+LOG_SLOW_QUERIES=true             # Log slow database queries
+SLOW_QUERY_THRESHOLD_MS=1000      # Slow query threshold
+
+# Security Logging
+ENABLE_SECURITY_LOGGING=true      # Enable security event logging
+
+# Log Management
+LOG_ROTATION_SIZE_MB=100          # Log rotation size
+LOG_RETENTION_DAYS=30             # Log retention period
+ENABLE_LOG_SAMPLING=false         # Enable log sampling
+LOG_SAMPLING_RATE=0.1             # Sampling rate (0.0 to 1.0)
 
 # Per-module log level overrides
-MODULE_LOG_LEVELS={"src.api": "DEBUG", "src.core": "INFO"}
+MODULE_LOG_LEVELS={"src.services": "DEBUG", "src.repositories": "INFO"}
 
 # Testing Configuration
 AUTH_BYPASS=false                 # Enable authentication bypass for testing

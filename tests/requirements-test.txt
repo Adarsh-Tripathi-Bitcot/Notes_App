@@ -1,0 +1,48 @@
+# Test Requirements - External Dependency Free
+# This file contains only the dependencies needed for testing without any external services
+
+# Core testing dependencies
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+pytest-mock==3.12.0
+
+# FastAPI testing (minimal dependencies)
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# HTTP client for testing (mocked in tests)
+httpx==0.25.2
+
+# Database (in-memory only for tests)
+sqlalchemy==2.0.23
+aiosqlite==0.19.0
+
+# Authentication (local only)
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# Environment management
+python-dotenv==1.0.0
+
+# Mocking and testing utilities
+unittest-mock==1.0.1
+freezegun==1.4.0
+
+# Code quality (for test validation)
+black==23.11.0
+isort==5.12.0
+flake8==6.1.0
+ruff==0.1.6
+
+# Note: This file intentionally excludes:
+# - redis (use mocks)
+# - openai (use mocks)
+# - boto3/aws services (use mocks)
+# - cloud services (use mocks)
+# - external APIs (use mocks)
+# - file system dependencies (use mocks)
+# - network dependencies (use mocks)

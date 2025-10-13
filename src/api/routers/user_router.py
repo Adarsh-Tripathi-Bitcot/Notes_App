@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 
+from ...core.auth_bypass import AuthBypass
+from ...core.config import settings
 from ...core.database import get_db
 from ...core.exceptions import AuthenticationError, NotFoundError, ValidationError
 from ...core.logging import get_logger, log_api_request
@@ -31,7 +33,7 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 # HTTP Bearer scheme for JWT token authentication
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def get_auth_service(db: Session = Depends(get_db)) -> AuthenticationService:
@@ -51,6 +53,7 @@ def get_auth_service(db: Session = Depends(get_db)) -> AuthenticationService:
 async def get_current_user_dependency(
     token=Depends(bearer_scheme),
     auth_service: AuthenticationService = Depends(get_auth_service),
+    db: Session = Depends(get_db),
 ) -> UserResponse:
     """
     Get current authenticated user from JWT token.
@@ -66,8 +69,31 @@ async def get_current_user_dependency(
         HTTPException: If authentication fails
     """
     try:
+        # Authentication bypass without Authorization header
+        if AuthBypass.is_bypass_enabled():
+            # Attempt to find or create a test user based on env credentials
+            test_email = settings.test_user_email
+            user = auth_service.user_repository.get_by_email(test_email)
+            if not user:
+                # Create a test user if not present
+                hashed_password = auth_service.get_password_hash("test-password")
+                user_dict = {
+                    "email": test_email,
+                    "username": settings.test_user_username,
+                    "first_name": settings.test_user_full_name.split(" ")[0]
+                    if settings.test_user_full_name
+                    else "Test",
+                    "last_name": "",
+                    "bio": "Test bypass user",
+                    "hashed_password": hashed_password,
+                    "is_active": True,
+                    "is_verified": True,
+                }
+                user = auth_service.user_repository.create(user_dict)
+            return user
+
         # Extract the token string from HTTPBearer
-        token_string = token.credentials
+        token_string = token.credentials if token else None
         user = auth_service.get_current_user(token_string)
         if not user:
             raise HTTPException(

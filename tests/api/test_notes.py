@@ -35,7 +35,7 @@ class TestNoteCreation:
         """Test note creation without authentication."""
         response = client.post("/api/v1/notes/", json=sample_note_data)
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         data = response.json()
         assert "error" in data
 
@@ -117,7 +117,7 @@ class TestNoteRetrieval:
         """Test notes retrieval without authentication."""
         response = client.get("/api/v1/notes/")
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         data = response.json()
         assert "error" in data
 
@@ -175,7 +175,7 @@ class TestNoteRetrieval:
         """Test specific note retrieval without authentication."""
         response = client.get(f"/api/v1/notes/{test_note.id}")
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         data = response.json()
         assert "error" in data
 
@@ -233,7 +233,7 @@ class TestNoteUpdate:
 
         response = client.put(f"/api/v1/notes/{test_note.id}", json=update_data)
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         data = response.json()
         assert "error" in data
 
@@ -339,7 +339,7 @@ class TestNoteDeletion:
         """Test note deletion without authentication."""
         response = client.delete(f"/api/v1/notes/{test_note.id}")
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         data = response.json()
         assert "error" in data
 
@@ -416,7 +416,7 @@ class TestNoteSearch:
 
         response = client.post("/api/v1/notes/search", json=search_data)
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         data = response.json()
         assert "error" in data
 
@@ -457,7 +457,7 @@ class TestNoteStats:
         """Test note statistics retrieval without authentication."""
         response = client.get("/api/v1/notes/stats/overview")
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         data = response.json()
         assert "error" in data
 
@@ -524,6 +524,6 @@ class TestBulkActions:
 
         response = client.post("/api/v1/notes/bulk-action", json=bulk_data)
 
-        assert response.status_code == 403
+        assert response.status_code == 401
         data = response.json()
         assert "error" in data

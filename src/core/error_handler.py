@@ -255,4 +255,4 @@ def setup_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
     app.add_exception_handler(Exception, general_exception_handler)
 
-    logger.info("Error handlers configured successfully")
+    # Error handlers configured silently

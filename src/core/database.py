@@ -66,7 +66,7 @@ def create_database_engines() -> None:
         class_=AsyncSession, autocommit=False, autoflush=False, bind=async_engine
     )
 
-    logger.info("Database engines created successfully")
+    # Database engines created silently
 
 
 def get_db() -> Session:

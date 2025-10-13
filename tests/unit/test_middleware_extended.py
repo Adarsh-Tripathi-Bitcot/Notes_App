@@ -145,12 +145,17 @@ class TestCorrelationMiddlewareComprehensive:
         mock_request = Mock(spec=Request)
         mock_request.headers = {"Authorization": "Bearer test-token"}
 
-        with patch("src.core.middleware.settings") as mock_settings:
+        with patch("src.core.middleware.settings") as mock_settings, patch(
+            "src.core.middleware.AuthBypass.is_bypass_enabled"
+        ) as mock_bypass:
             # Configure auth bypass
             mock_settings.auth_bypass = True
             mock_settings.test_user_id = "test-user-id"
             mock_settings.test_user_email = "test@example.com"
             mock_settings.test_user_username = "testuser"
+            mock_settings.test_user_full_name = "Test User"
+            mock_settings.test_user_display_name = "testuser"
+            mock_bypass.return_value = True
 
             # Run the test
             result = middleware._extract_user_context(mock_request)
@@ -344,7 +349,7 @@ class TestCorrelationMiddlewareComprehensive:
         middleware = CorrelationMiddleware(mock_app)
 
         # Assertions
-        assert middleware.exclude_paths == []
+        assert middleware.exclude_paths == ["/health", "/metrics", "/favicon.ico"]
         assert middleware.app == mock_app
 
 
@@ -356,12 +361,12 @@ class TestSetupLoggingMiddlewareComprehensive:
         mock_app = Mock()
 
         with patch(
-            "src.core.middleware.CorrelationMiddleware"
+            "src.core.middleware.ProfessionalCorrelationMiddleware"
         ) as mock_middleware_class:
             setup_logging_middleware(mock_app)
 
             # Assertions
-            mock_app.add_middleware.assert_called_once()
+            assert mock_app.add_middleware.call_count == 2
             call_args = mock_app.add_middleware.call_args
             assert call_args[0][0] == mock_middleware_class
             assert call_args[1]["exclude_paths"] == []
@@ -372,12 +377,12 @@ class TestSetupLoggingMiddlewareComprehensive:
         exclude_paths = ["/health", "/metrics"]
 
         with patch(
-            "src.core.middleware.CorrelationMiddleware"
+            "src.core.middleware.ProfessionalCorrelationMiddleware"
         ) as mock_middleware_class:
             setup_logging_middleware(mock_app, exclude_paths=exclude_paths)
 
             # Assertions
-            mock_app.add_middleware.assert_called_once()
+            assert mock_app.add_middleware.call_count == 2
             call_args = mock_app.add_middleware.call_args
             assert call_args[0][0] == mock_middleware_class
             assert call_args[1]["exclude_paths"] == exclude_paths

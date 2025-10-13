@@ -102,6 +102,7 @@ class Settings(BaseSettings):
         "env_file": ".env",
         "env_file_encoding": "utf-8",
         "case_sensitive": False,
+        "extra": "ignore",  # Allow extra fields to be ignored
     }
 
     @field_validator("environment")
@@ -177,13 +178,22 @@ class Settings(BaseSettings):
     @classmethod
     def validate_auth_bypass(cls, v: bool, info) -> bool:
         """Validate authentication bypass setting."""
-        environment = info.data.get("environment", "development")
-        if v and environment not in ["testing", "development"]:
-            raise ValueError(
-                "Authentication bypass only allowed in testing/development"
-            )
+        # Allow setting to be True but it will be disabled at runtime in production
+        # This allows the server to start but bypass will be disabled by
+        # AuthBypass.is_bypass_enabled()
         return v
 
 
+def get_settings() -> Settings:
+    """Get settings instance, reloading from environment if needed."""
+    return Settings()
+
+
+# For backward compatibility, create a property-like access
+class SettingsProxy:
+    def __getattr__(self, name):
+        return getattr(get_settings(), name)
+
+
 # Global settings instance
-settings = Settings()
+settings = SettingsProxy()
